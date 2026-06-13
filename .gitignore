@@ -1,5 +1,9 @@
 # wrangler files
 .wrangler
+wrangler-*.log
+
+# local tooling artifacts
+.playwright-mcp/
 
 # brainstorming session artifacts
 .superpowers/
