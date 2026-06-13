@@ -111,6 +111,7 @@ document.addEventListener("keydown", (e) => {
   }
   if (e.key === "Escape") {
     if (!document.getElementById("drawer").hidden) closeDrawer();
+    else if (!document.getElementById("profile").hidden) clearNodeSelection();
     else if (selectedNode) clearNodeSelection();
     else hideWelcome(false);
   }
@@ -292,7 +293,7 @@ function fillHoverCard(d, withButton) {
   const kick = el("div", "hc-kicker", dom ? dom.label : "");
   if (dom) kick.style.color = dom.color;
   hoverCard.append(kick, el("div", "hc-name", d.name),
-    el("div", "hc-role", d.role + " · " + d.org));
+    el("div", "hc-role", d.role + (d.org ? " · " + d.org : "")));
   if (withButton) {
     const btn = el("button", "hc-btn", "Read profile →");
     btn.addEventListener("click", (ev) => { ev.stopPropagation(); openProfileFor(d); });
@@ -467,6 +468,7 @@ sortedPeople.forEach(p => {
   item.addEventListener("click", () => {
     closeDrawer();
     const d = nodeById[p.id];
+    if (!d) return;
     selectNode(d, { openProfile: true });
     flyTo(d);
   });
@@ -496,6 +498,7 @@ function refreshDrawerList() {
   const related = selectedNode ? getNeighborIds(selectedNode.id) : null;
   drawerList.querySelectorAll(".drawer-item").forEach(item => {
     const p = nodeById[item.dataset.pid];
+    if (!p) return;
     const show = (!q || p.name.toLowerCase().includes(q)) && (!related || related.has(p.id));
     item.style.display = show ? "" : "none";
     item.classList.toggle("sel", !!selectedNode && p.id === selectedNode.id);
@@ -620,6 +623,14 @@ sheetHead.addEventListener("touchend", () => {
     if (profileEl.classList.contains("full")) profileEl.classList.remove("full");
     else clearNodeSelection();
   }
+}, { passive: true });
+
+// A cancelled touch (incoming call, OS gesture) never fires touchend; reset
+// the drag state so the sheet doesn't strand at a partial transform.
+sheetHead.addEventListener("touchcancel", () => {
+  if (!sheetDrag) return;
+  sheetDrag = null;
+  profileEl.style.transform = "";
 }, { passive: true });
 
 // ═══ 14. WELCOME CARD ═══
