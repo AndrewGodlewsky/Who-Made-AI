@@ -101,8 +101,4 @@ node tests/all-profiles-smoke.cjs # checks every profile parses, 0 unmapped sect
 
 The site is hosted on **Cloudflare** as static Workers assets (`wrangler.jsonc`). It's connected to this GitHub repository, so **every push to `main` automatically redeploys** (~60 seconds). There is no build command — files are served as-is from the repo root. `.assetsignore` excludes `docs/`, `tests/`, and local dev artifacts from what gets served.
 
----
 
-## Credits
-
-The research profiles were written for the *Catholics in Tech Podcast*. Built as a static site with D3.js and marked.js.
