@@ -436,9 +436,225 @@ window.addEventListener("resize", () => {
   simulation.alpha(0.25).restart();
 });
 
-// ─── TEMPORARY STUBS — replaced wholesale in Task 7 ───
-function openProfileFor(d) {}
-function closeProfile() {}
-function refreshDrawerList() {}
-function closeDrawer() {}
-function hideWelcome(forever) {}
+// ═══ 11. FIGURES DRAWER ═══
+const drawerEl = document.getElementById("drawer");
+const drawerScrim = document.getElementById("drawer-scrim");
+const drawerList = document.getElementById("drawer-list");
+const drawerSearch = document.getElementById("drawer-search");
+
+document.getElementById("drawer-stats").textContent =
+  PEOPLE.length + " people · " + TOPICS.length + " topics";
+
+const legendEl = document.getElementById("drawer-legend");
+Object.entries(DOMAINS).forEach(([id, dom]) => {
+  const count = PEOPLE.filter(p => p.domain === id).length;
+  const row = el("div", "legend-row");
+  const dot = el("span", "dot");
+  dot.style.background = dom.color;
+  row.append(dot, el("span", null, dom.label), el("span", "legend-count", String(count)));
+  legendEl.appendChild(row);
+});
+
+const sortedPeople = [...PEOPLE].sort((a, b) =>
+  a.name.split(" ").pop().localeCompare(b.name.split(" ").pop()));
+
+sortedPeople.forEach(p => {
+  const item = el("div", "drawer-item");
+  item.dataset.pid = p.id;
+  const dot = el("span", "dot");
+  dot.style.background = DOMAINS[p.domain] ? DOMAINS[p.domain].color : "#8a8377";
+  item.append(dot, el("span", null, p.name));
+  item.addEventListener("click", () => {
+    closeDrawer();
+    const d = nodeById[p.id];
+    selectNode(d, { openProfile: true });
+    flyTo(d);
+  });
+  drawerList.appendChild(item);
+});
+
+function openDrawer() {
+  drawerEl.hidden = false;
+  drawerScrim.hidden = false;
+  drawerSearch.value = "";
+  refreshDrawerList();
+  if (!isTouch) drawerSearch.focus();
+}
+function closeDrawer() {
+  drawerEl.hidden = true;
+  drawerScrim.hidden = true;
+}
+document.getElementById("figures-btn").addEventListener("click", openDrawer);
+document.getElementById("drawer-close").addEventListener("click", closeDrawer);
+drawerScrim.addEventListener("click", closeDrawer);
+drawerSearch.addEventListener("input", refreshDrawerList);
+
+// Text filter + selection filter combined (parity with the old people panel:
+// an active selection narrows the list to the selection + its neighbors).
+function refreshDrawerList() {
+  const q = drawerSearch.value.toLowerCase().trim();
+  const related = selectedNode ? getNeighborIds(selectedNode.id) : null;
+  drawerList.querySelectorAll(".drawer-item").forEach(item => {
+    const p = nodeById[item.dataset.pid];
+    const show = (!q || p.name.toLowerCase().includes(q)) && (!related || related.has(p.id));
+    item.style.display = show ? "" : "none";
+    item.classList.toggle("sel", !!selectedNode && p.id === selectedNode.id);
+  });
+}
+
+// ═══ 12. PROFILE PAPER PAGE ═══
+const profileEl = document.getElementById("profile");
+const tabsEl = document.getElementById("profile-tabs");
+const bodyEl = document.getElementById("profile-body");
+let currentPerson = null;
+let currentTabs = [];
+
+function openProfileFor(d) {
+  hoverCard.hidden = true;
+  currentPerson = d;
+  const dom = DOMAINS[d.domain];
+
+  const kicker = document.getElementById("profile-kicker");
+  kicker.textContent = "RESEARCH PROFILE · " + (dom ? dom.label.toUpperCase() : "");
+  kicker.style.color = dom ? dom.color : "var(--accent)";
+  document.getElementById("profile-name").textContent = d.name;
+  document.getElementById("profile-role").textContent =
+    d.role + (d.org ? " · " + d.org : "");
+
+  const md = (typeof RESEARCH !== "undefined" && RESEARCH[d.id]) ? RESEARCH[d.id] : null;
+  const sections = md ? ProfileSections.parseSections(md) : [];
+  currentTabs = ProfileSections.mapSectionsToTabs(sections,
+    t => console.warn('Unmapped profile section "' + t + '" for ' + d.id));
+
+  while (tabsEl.firstChild) tabsEl.removeChild(tabsEl.firstChild);
+  currentTabs.forEach((t, i) => {
+    const b = el("button", "ptab" + (i === 0 ? " on" : ""), t.tab);
+    b.addEventListener("click", () => activateTab(i));
+    tabsEl.appendChild(b);
+  });
+
+  activateTab(0);
+  profileEl.hidden = false;
+  profileEl.classList.remove("full"); // mobile sheet opens at peek height
+}
+
+function activateTab(i) {
+  tabsEl.querySelectorAll(".ptab").forEach((b, bi) => b.classList.toggle("on", bi === i));
+  const d = currentPerson;
+  const t = currentTabs[i];
+  while (bodyEl.firstChild) bodyEl.removeChild(bodyEl.firstChild);
+
+  if (t.tab === "Overview") {
+    const ledeText =
+      (typeof SUMMARIES !== "undefined" && SUMMARIES[d.id]) ? SUMMARIES[d.id] :
+      (typeof BIOS !== "undefined" && BIOS[d.id]) ? BIOS[d.id] : null;
+    if (ledeText) bodyEl.appendChild(el("div", "lede", ledeText));
+    if (t.sections.length === 0 && (typeof RESEARCH === "undefined" || !RESEARCH[d.id])) {
+      bodyEl.appendChild(el("p", "muted", "Full research profile not available for this figure."));
+    }
+  }
+
+  t.sections.forEach(s => {
+    bodyEl.appendChild(el("h3", null, s.title));
+    const div = el("div", "md");
+    if (typeof marked !== "undefined") div.innerHTML = marked.parse(s.body);
+    else div.textContent = s.body;
+    bodyEl.appendChild(div);
+  });
+
+  if (t.tab === "Overview") appendConnected(d);
+  bodyEl.scrollTop = 0;
+}
+
+function appendConnected(d) {
+  const ns = neighborsByWeight(d.id).slice(0, 8);
+  if (!ns.length) return;
+  bodyEl.appendChild(el("h3", null, "Connected figures"));
+  const wrap = el("div", "conn");
+  ns.forEach(n => {
+    const p = nodeById[n.id];
+    if (!p) return;
+    const chipBtn = el("button", "conn-chip");
+    const dot = el("span", "dot");
+    dot.style.background = DOMAINS[p.domain] ? DOMAINS[p.domain].color : "#8a8377";
+    chipBtn.append(dot, el("span", null, p.name));
+    chipBtn.addEventListener("click", () => {
+      selectNode(p, { openProfile: true });
+      flyTo(p);
+    });
+    wrap.appendChild(chipBtn);
+  });
+  bodyEl.appendChild(wrap);
+}
+
+function closeProfile() {
+  profileEl.hidden = true;
+  profileEl.classList.remove("full");
+}
+document.getElementById("profile-close").addEventListener("click", () => clearNodeSelection());
+
+// ═══ 13. MOBILE BOTTOM SHEET ═══
+// Drag the sheet header: up past 60px → full height; down past 80px → peek
+// (from full) or close (from peek); otherwise snap back.
+let sheetDrag = null;
+const sheetHead = profileEl.querySelector(".profile-head");
+
+sheetHead.addEventListener("touchstart", (e) => {
+  if (!isMobile()) return;
+  sheetDrag = { y: e.touches[0].clientY, dy: 0 };
+}, { passive: true });
+
+sheetHead.addEventListener("touchmove", (e) => {
+  if (!sheetDrag) return;
+  sheetDrag.dy = e.touches[0].clientY - sheetDrag.y;
+  profileEl.style.transform = "translateY(" + Math.max(-40, sheetDrag.dy) + "px)";
+}, { passive: true });
+
+sheetHead.addEventListener("touchend", () => {
+  if (!sheetDrag) return;
+  const dy = sheetDrag.dy;
+  sheetDrag = null;
+  profileEl.style.transform = "";
+  if (dy < -60) profileEl.classList.add("full");
+  else if (dy > 80) {
+    if (profileEl.classList.contains("full")) profileEl.classList.remove("full");
+    else clearNodeSelection();
+  }
+}, { passive: true });
+
+// ═══ 14. WELCOME CARD ═══
+const welcomeEl = document.getElementById("welcome");
+const WELCOME_KEY = "wmai.welcome.dismissed";
+
+document.getElementById("welcome-count").textContent =
+  PEOPLE.length + " people. One revolution.";
+
+const wLegend = document.getElementById("welcome-legend");
+Object.values(DOMAINS).forEach(dom => {
+  const s = el("span");
+  const i = el("i");
+  i.style.background = dom.color;
+  s.append(i, document.createTextNode(dom.label));
+  wLegend.appendChild(s);
+});
+
+function maybeShowWelcome() {
+  let dismissed = false;
+  try {
+    dismissed = localStorage.getItem(WELCOME_KEY) === "1" ||
+                sessionStorage.getItem(WELCOME_KEY) === "1";
+  } catch (e) { /* storage unavailable (private mode): show every visit */ }
+  if (!dismissed) welcomeEl.hidden = false;
+}
+
+function hideWelcome(forever) {
+  if (welcomeEl.hidden) return;
+  welcomeEl.hidden = true;
+  try {
+    (forever ? localStorage : sessionStorage).setItem(WELCOME_KEY, "1");
+  } catch (e) { /* ignore */ }
+}
+
+document.getElementById("welcome-cta").addEventListener("click", () => hideWelcome(false));
+document.getElementById("welcome-never").addEventListener("click", () => hideWelcome(true));
+maybeShowWelcome();
