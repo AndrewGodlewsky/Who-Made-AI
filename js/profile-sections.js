@@ -31,7 +31,7 @@
   function parseSections(mdText) {
     const sections = [];
     let current = null;
-    for (const line of String(mdText).split("\n")) {
+    for (const line of String(mdText).split(/\r?\n/)) {
       const m = line.match(/^## (.+)$/);
       if (m) {
         if (current) sections.push(current);
@@ -64,7 +64,15 @@
       .filter(t => t.sections.length > 0 || t.tab === "Overview");
   }
 
-  const api = { TAB_ORDER, parseSections, mapSectionsToTabs, normalizeTitle };
-  if (typeof module !== "undefined" && module.exports) module.exports = api;
-  global.ProfileSections = api;
+  const api = {
+    TAB_ORDER: Object.freeze(TAB_ORDER.slice()),
+    parseSections,
+    mapSectionsToTabs,
+    normalizeTitle,
+  };
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = api;
+  } else {
+    global.ProfileSections = api;
+  }
 })(typeof window !== "undefined" ? window : globalThis);

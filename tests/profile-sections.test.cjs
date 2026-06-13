@@ -77,3 +77,17 @@ test("TAB_ORDER is the canonical six", () => {
   assert.deepStrictEqual(TAB_ORDER,
     ["Overview", "Research", "Positions", "Media", "Values", "Criticism"]);
 });
+
+test("parseSections handles CRLF line endings", () => {
+  const s = parseSections("## A\r\nfoo\r\n## B\r\nbar\r\n");
+  assert.deepStrictEqual(s.map(x => x.title), ["A", "B"]);
+  assert.strictEqual(s[0].body, "foo\n");
+});
+
+test("exported TAB_ORDER is frozen and detached from internals", () => {
+  assert.ok(Object.isFrozen(TAB_ORDER));
+  assert.throws(() => { "use strict"; TAB_ORDER.push("Extra"); }, TypeError);
+  // mapping still works after the attempted mutation
+  const tabs = mapSectionsToTabs(parseSections("## Values\nv\n"), () => {});
+  assert.deepStrictEqual(tabs.map(t => t.tab), ["Overview", "Values"]);
+});
