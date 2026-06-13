@@ -24,8 +24,10 @@ for (const p of PEOPLE) {
   if (!SUMMARIES[p.id]) console.warn(`warn ${p.id}: no SUMMARIES entry`);
   const unmapped = [];
   const tabs = mapSectionsToTabs(parseSections(md), t => unmapped.push(t));
-  if (unmapped.length) { console.error(`FAIL ${p.id}: unmapped sections: ${unmapped.join(" | ")}`); failures++; }
-  if (tabs.length < 2) { console.error(`FAIL ${p.id}: only ${tabs.length} tab(s)`); failures++; }
+  let failed = false;
+  if (unmapped.length) { console.error(`FAIL ${p.id}: unmapped sections: ${unmapped.join(" | ")}`); failed = true; }
+  if (tabs.length < 2) { console.error(`FAIL ${p.id}: only ${tabs.length} tab(s)`); failed = true; }
+  if (failed) failures++;
 }
 console.log(`Checked ${PEOPLE.length} profiles — ${failures} failure(s).`);
 process.exit(failures ? 1 : 0);
