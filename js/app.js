@@ -120,6 +120,7 @@ searchInput.addEventListener("input", function () {
   searchQuery = this.value.toLowerCase().trim();
   applySearchDim();
   renderLinks();
+  updateBadge();
 });
 
 function getOpacity(d) {
@@ -334,8 +335,15 @@ function onNodeOut(event, d) {
 function updateBadge() {
   const badge = document.getElementById("conn-badge");
   if (activeTopics.size === 0) { badge.hidden = true; return; }
-  const count = allEdges.filter(e => e.topics.some(t => activeTopics.has(t))).length;
-  badge.textContent = count + " connections — " +
+  let edges = allEdges.filter(e => e.topics.some(t => activeTopics.has(t)));
+  if (searchQuery) {
+    edges = edges.filter(e => {
+      const sa = nodeById[e.source], ta = nodeById[e.target];
+      return (sa && sa.name.toLowerCase().includes(searchQuery)) ||
+             (ta && ta.name.toLowerCase().includes(searchQuery));
+    });
+  }
+  badge.textContent = edges.length + " connections — " +
     [...activeTopics].map(t => topicById[t] ? topicById[t].label : t).join(" · ");
   badge.hidden = false;
 }
