@@ -165,6 +165,7 @@ const PEOPLE = [
   { id:"emad",        name:"Emad Mostaque",       role:"Founder, Stability AI",                 org:"Stability AI / Independent",                domain:"industry", size:7, topics:["generative_ai","open_source_ai"] },
   { id:"amensch",     name:"Arthur Mensch",       role:"Co-Founder and CEO",                    org:"Mistral AI",                                domain:"industry", size:7, topics:["llms","open_source_ai","foundation_models"] },
   { id:"chollet",     name:"Francois Chollet",    role:"Creator of Keras and ARC Challenge",    org:"Google / Independent",                      domain:"research", size:8, topics:["deep_learning","agi","ml_education"] },
+  { id:"horthy",      name:"Dex Horthy",           role:"Founder & CEO",                          org:"HumanLayer",                             domain:"industry", size:6,  topics:["llms","open_source_ai","hci","ml_education"] },
 ];
 
 // ═══════════════════════════════════════
@@ -292,4 +293,5 @@ const BIOS = {
   emad:        "Founder of Stability AI and the force behind Stable Diffusion — the open-source image generation model that democratized generative art. By releasing model weights publicly, Stability AI catalyzed an explosion of creative tools and research. Later left Stability AI amid controversy. A polarizing figure who champions open-source AI against closed corporate models.",
   amensch:     "Co-founder and CEO of Mistral AI, the French AI startup challenging US LLM dominance with high-performance open-weight models. Mistral's models (Mistral 7B, Mixtral MoE) punch above their weight class and are widely adopted in Europe. Represents Europe's push for technological sovereignty in AI alongside regulatory leadership.",
   chollet:     "Creator of the Keras deep learning library, making neural network research accessible to millions. Invented the ARC (Abstraction and Reasoning Corpus) benchmark — designed to measure general fluid intelligence in AI, not just pattern memorization. His open critique of AI hype and advocacy for genuine reasoning benchmarks has influenced how the field measures real progress.",
+  horthy:      "Founder and CEO of HumanLayer (YC F24), which builds human-in-the-loop infrastructure — approval queues and escalations across Slack, SMS, and email — so people stay in control of autonomous AI agents. Author of the widely shared \"12-Factor Agents\" manifesto (2025), which recasts Heroku's Twelve-Factor App as engineering principles for production-grade LLM software. A leading voice for the view that \"agents are software,\" not framework magic, and that \"everything is context engineering\" — an agent is only as reliable as the tokens in its context window.",
 };
